@@ -1,0 +1,9 @@
+{
+  "title": true,
+  "main": {
+    "sourceDirectory": "src"
+  },
+  "renderer": {
+    "sourceDirectory": null
+  }
+}

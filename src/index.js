@@ -1,22 +1,26 @@
 import { app, session, BrowserWindow } from 'electron'
 
 import path from 'path'
+import url from 'url'
 import http from 'axios'
 import os from 'os'
 import execa from 'execa'
 import { randomPort, waitFor, getRPath } from './helpers'
 
-const rPath = getRPath(os.platform())
+const isDevelopment = process.env.NODE_ENV !== 'production'
+
+const rDir = getRPath(os.platform())
+const basePath = isDevelopment ? __dirname : app.getAppPath();
+const appPath = path.join(basePath, '..');
 
 // signal if a shutdown of the app was requested
 // this is used to prevent an error window once the R session dies
 let shutdown = false
 
-const rpath = path.join(app.getAppPath(), rPath)
-const libPath = path.join(rpath, 'library')
-const rscript = path.join(rpath, 'bin', 'R')
-
-const shinyAppPath = path.join(app.getAppPath(), 'shiny')
+const rPath = path.resolve(path.join(appPath, rDir))
+const libPath = path.join(rPath, 'library')
+const rscript = path.join(rPath, 'bin', 'R')
+const shinyAppPath = path.join(appPath, 'shiny')
 
 const backgroundColor = '#2c3e50'
 
@@ -27,11 +31,6 @@ const backgroundColor = '#2c3e50'
 // At the random port, another webserver is running
 // at any given time there should be 0 or 1 shiny processes
 let rShinyProcess = null
-
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
-  app.quit()
-}
 
 // tries to start a webserver
 // attempt - a counter how often it was attempted to start a webserver
@@ -54,6 +53,8 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
 
   let shinyPort = randomPort()
 
+  console.log(`Shiny port: ${shinyPort}`)
+
   await progressCallback({attempt: attempt, code: 'start'})
 
   let shinyRunning = false
@@ -72,11 +73,11 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
 
   let shinyProcessAlreadyDead = false
   rShinyProcess = execa(rscript,
-    ['--vanilla', '-f', path.join(app.getAppPath(), 'start-shiny.R')],
+    ['--vanilla', '-f', path.join(appPath, 'start-shiny.R')],
     { env: {
       'WITHIN_ELECTRON': '1', // can be used within an app to implement specific behaviour
-      'RHOME': rpath,
-      'R_HOME_DIR': rpath,
+      'RHOME': rPath,
+      'R_HOME_DIR': rPath,
       'RE_SHINY_PORT': shinyPort,
       'RE_SHINY_PATH': shinyAppPath,
       'R_LIBS': libPath,
@@ -116,50 +117,39 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
-let loadingSplashScreen
-let errorSplashScreen
+
+const windowOptions = {
+  width: 800,
+  height: 600,
+  backgroundColor: backgroundColor,
+  webPreferences: {
+    nodeIntegration: false,
+    contextIsolation: true
+  }
+}
 
 const createWindow = (shinyUrl) => {
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    show: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true
-    }
-  })
-
-  mainWindow.loadURL(shinyUrl)
-
-  // mainWindow.webContents.openDevTools()
-
+  mainWindow = new BrowserWindow(windowOptions)
   mainWindow.on('closed', () => {
     mainWindow = null
   })
 }
 
-const splashScreenOptions = {
-  width: 800,
-  height: 600,
-  backgroundColor: backgroundColor
-}
-
 const createSplashScreen = (filename) => {
-  const splashScreen = new BrowserWindow(splashScreenOptions)
-  splashScreen.loadURL(`file://${__dirname}/${filename}.html`)
-  splashScreen.on('closed', () => {
-    splashScreen = null
-  })
-  return splashScreen
+  console.log(__static)
+  mainWindow.loadURL(url.format({
+    pathname: path.join(__static, `${filename}.html`),
+    protocol: 'file',
+    slashes: true
+  }))
 }
 
 const createLoadingSplashScreen = () => {
-  loadingSplashScreen = createSplashScreen('loading')
+  createSplashScreen('loading')
 }
 
 const createErrorScreen = () => {
-  errorSplashScreen = createSplashScreen('failed')
+  createSplashScreen('failed')
 }
 
 // This method will be called when Electron has finished
@@ -183,15 +173,17 @@ app.on('ready', async () => {
     callback(false)
   })
 
+  createWindow();
   createLoadingSplashScreen()
+  await mainWindow.show();
 
   const emitSpashEvent = async (event, data) => {
     try {
-      await loadingSplashScreen.webContents.send(event, data)
+      await mainWindow.webContents.send(event, data)
     } catch (e) {}
   }
 
-  // pass the loading events down to the loadingSplashScreen window
+  // pass the loading events down to the window
   const progressCallback = async (event) => {
     await emitSpashEvent('start-webserver-event', event)
   }
@@ -201,8 +193,6 @@ app.on('ready', async () => {
       return
     }
     createErrorScreen()
-    await errorSplashScreen.show()
-    mainWindow.destroy()
   }
 
   const onErrorStartup = async () => {
@@ -212,10 +202,7 @@ app.on('ready', async () => {
 
   try {
     await tryStartWebserver(0, progressCallback, onErrorStartup, onErrorLater, (url) => {
-      createWindow(url)
-      loadingSplashScreen.destroy()
-      loadingSplashScreen = null
-      mainWindow.show()
+      mainWindow.loadURL(url)
     })
   } catch (e) {
     await emitSpashEvent('failed')

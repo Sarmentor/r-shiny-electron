@@ -1,7 +1,6 @@
-node_modules
-out
-r-mac
 r-win
-package-lock.json
-.Rproj.user
-r-shiny-electron.Rproj
+r-mac
+node_modules
+dist
+
+.DS_Store

@@ -1,0 +1,27 @@
+extraResources:
+  - "static"
+  - "r-${os}/**/*"
+  - "shiny"
+  - "start-shiny.R"
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dir
+      arch:
+        - x64
+linux:
+  category: Science
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - ia32

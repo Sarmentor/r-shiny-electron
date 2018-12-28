@@ -5,64 +5,26 @@
   "description": "My Electron application description",
   "main": "src/index.js",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
+    "start": "cross-env NODE_ENV=development electron-webpack dev",
+    "compile": "cross-env NODE_ENV=production electron-webpack",
+    "dist": "cross-env NODE_ENV=production npm run compile && electron-builder",
+    "dist:dir": "npm run dist -- --dir -c.compression=store -c.mac.identity=null",
     "lint": "eslint src --color"
   },
   "keywords": [],
   "author": "You",
-  "license": "MIT",
   "private": true,
-  "config": {
-    "forge": {
-      "make_targets": {
-        "win32": [
-          "squirrel"
-        ],
-        "darwin": [
-          "zip"
-        ]
-      },
-      "electronPackagerConfig": {
-        "packageManager": "npm",
-        "afterCopy": [
-          "./prune-r"
-        ]
-      },
-      "electronWinstallerConfig": {
-        "name": "r_shiny_electron"
-      },
-      "electronInstallerDebian": {},
-      "electronInstallerRedhat": {},
-      "github_repository": {
-        "owner": "githubusername",
-        "name": "r-shiny-electron"
-      },
-      "windowsStoreConfig": {
-        "packageName": "",
-        "name": "rshinyelectron"
-      }
-    }
-  },
   "dependencies": {
     "axios": "^0.18.0",
-    "electron-compile": "^6.4.3",
     "electron-squirrel-startup": "^1.0.0",
-    "execa": "^0.10.0"
+    "execa": "^0.10.0",
+    "source-map-support": "^0.5.9"
   },
   "devDependencies": {
-    "babel-plugin-transform-async-to-generator": "^6.24.1",
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-react": "^6.24.1",
-    "electron-forge": "^5.2.2",
-    "electron-prebuilt-compile": "2.0.4",
-    "eslint": "^3.19.0",
-    "eslint-config-airbnb": "^15.1.0",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-jsx-a11y": "^5.1.1",
-    "eslint-plugin-react": "^7.11.1",
-    "fs-extra": "^7.0.0"
+    "cross-env": "^5.2.0",
+    "electron": "3.0.10",
+    "electron-builder": "^20.36.2",
+    "electron-webpack": "^2.6.1",
+    "webpack": "^4.26.0"
   }
 }
