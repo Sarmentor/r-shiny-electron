@@ -1,3 +1,69 @@
+FROM ubuntu:trusty as rbuild
+
+ENV DEBIAN_FRONTEND=noninteractive DOCKER_BUILD=1
+
+WORKDIR /workspace
+
+RUN echo 'deb http://cran.rstudio.com/bin/linux/ubuntu trusty-cran35/' >> /etc/apt/sources.list \
+ && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
+ && apt-get update \
+ && URLS=$(apt-get install -y --no-install-recommends --print-uris \
+       r-base=3.5.1-2trusty \
+       r-recommended=3.5.1-2trusty \
+       r-base-core=3.5.1-2trusty \
+       r-cran-codetools=0.2-15-1.1trusty0 \
+    | cut -d "'" -f 2 | grep -e "^http") \
+ && apt-get install -y --no-install-recommends wget \
+ && echo "$URLS" | wget -c -i- \
+ && mkdir -p ./r-linux/ \
+ && cd ./r-linux/ \
+ && mkdir -p usr/bin usr/lib \
+ && find ../*.deb -exec dpkg-deb -X {} . \; \
+ && sed -i 's/R_HOME_DIR=\/usr\/lib\/R/#R_HOME_DIR=\/usr\/lib\/R/' ./usr/lib/R/bin/R \
+ && mv ./etc/R/* ./usr/lib/R/etc/ \
+ && cd /workspace \
+ && mv r-linux / \
+ && cp /lib/x86_64-linux-gnu/libreadline.so.6 /r-linux/usr/lib/x86_64-linux-gnu/ \
+ && cp /lib/x86_64-linux-gnu/libtinfo.so.5 /r-linux/usr/lib/x86_64-linux-gnu/ \
+ && cp /lib/x86_64-linux-gnu/libpcre.so.3 /r-linux/usr/lib/x86_64-linux-gnu/ \
+ && cp /lib/x86_64-linux-gnu/libbz2.so.1.0 /r-linux/usr/lib/x86_64-linux-gnu/ \
+ && cp /lib/x86_64-linux-gnu/libpng12.so.0 /r-linux/usr/lib/x86_64-linux-gnu/ \
+ && find /r-linux/lib/x86_64-linux-gnu/ -regex "^.*\.so\.[0-9]+$" -exec cp {} /r-linux/usr/lib/x86_64-linux-gnu/ \; \
+ && rm -rf /r-linux/lib \
+ && rm -rf /r-linux/usr/bin /r-linux/usr/include /r-linux/usr/sbin \
+ && find /r-linux/usr/share/* -maxdepth 0 ! -name "fonts" -exec rm -rf {} + \
+ && find /r-linux/etc/* -maxdepth 0 ! -name "fonts" -exec rm -rf {} + \
+ && mv /r-linux/etc/fonts /r-linux/usr/lib/R/etc/ \
+ && rmdir /r-linux/etc \
+ && mv /r-linux/usr/share/fonts /r-linux/usr/lib/R/ \
+ && rmdir /r-linux/usr/share/ \
+ && rm -f /r-linux/usr/lib/libR.so \
+ && find /r-linux/usr/lib/* -maxdepth 0 ! -name "R" -exec mv {} /r-linux/usr/lib/R/lib/ \; \
+ && cp -r /r-linux/usr/lib/R/bin/exec/* /r-linux/usr/lib/R/bin/ \
+ && rm -rf /r-linux/usr/lib/R/bin/exec/ \
+ && mv /r-linux/usr/lib/R /r-linux.temp \
+ && rm -rf /r-linux \
+ && mv /r-linux.temp /r-linux
+
+RUN apt-get install -y --no-install-recommends \
+       build-essential \
+       libcurl4-openssl-dev \
+       r-base=3.5.1-2trusty \
+       r-recommended=3.5.1-2trusty \
+       r-base-core=3.5.1-2trusty \
+       r-cran-codetools=0.2-15-1.1trusty0
+
+WORKDIR /
+
+RUN R -e "install.packages('automagic', repos='http://cran.rstudio.com/')"
+
+COPY add-cran-binary-pkgs.R ./
+RUN Rscript /add-cran-binary-pkgs.R \
+ && rm -rf /r-linux/library/BH
+
+#####################################################################################################################
+
+
 FROM rocker/shiny:3.5.1
 
 RUN dpkg --add-architecture i386 \
@@ -50,8 +116,10 @@ WORKDIR /workdir
 COPY get-r-win.sh get-r-mac.sh ./
 RUN ./get-r-win.sh && ./get-r-mac.sh
 
-COPY add-cran-binary-pkgs.R ./
-RUN Rscript add-cran-binary-pkgs.R
+COPY add-cran-binary-pkgs.R /
+RUN Rscript /add-cran-binary-pkgs.R
+
+COPY --from=rbuild /r-linux/ ./r-linux/
 
 COPY package.json package-lock.json ./
 

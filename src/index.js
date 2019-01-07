@@ -72,11 +72,22 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
   }
 
   let shinyProcessAlreadyDead = false
+
+  let extraEnv = {}
+  if (os.platform() == 'linux') {
+    extraEnv = {
+      'LD_LIBRARY_PATH': `${rPath}/lib/:${rPath}/lib/libblas/:${rPath}/lib/lapack/:${rPath}/lib/x86_64-linux-gnu/`,
+      'EDITOR': 'vi',
+      'FONTCONFIG_PATH': path.join(rPath, 'etc', 'fonts'),
+      'XDG_DATA_HOME': rPath,
+    }
+  }
   rShinyProcess = execa(rscript,
     ['--vanilla', '-f', path.join(appPath, 'start-shiny.R')],
     { env: {
+      ...extraEnv,
       'WITHIN_ELECTRON': '1', // can be used within an app to implement specific behaviour
-      'RHOME': rPath,
+      'R_HOME': rPath,
       'R_HOME_DIR': rPath,
       'RE_SHINY_PORT': shinyPort,
       'RE_SHINY_PATH': shinyAppPath,
