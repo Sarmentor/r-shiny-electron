@@ -1,6 +1,6 @@
 r-win
 r-mac
+r-linux
 node_modules
 dist
-
 .DS_Store
