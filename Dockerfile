@@ -55,11 +55,12 @@ RUN apt-get install -y --no-install-recommends \
 
 WORKDIR /
 
-RUN R -e "install.packages('automagic', repos='http://cran.rstudio.com/')"
-
 COPY add-cran-binary-pkgs.R ./
-RUN Rscript /add-cran-binary-pkgs.R \
- && rm -rf /r-linux/library/BH
+RUN Rscript /add-cran-binary-pkgs.R
+
+COPY requirements.txt ./
+RUN Rscript /add-cran-binary-pkgs.R requirements.txt
+
 
 #####################################################################################################################
 
@@ -107,9 +108,7 @@ RUN dpkg --add-architecture i386 \
  && wget https://github.com/dscharrer/innoextract/releases/download/1.7/innoextract-1.7.tar.gz \
        && tar -xvzf innoextract-1.7.tar.gz \
        && mkdir -p innoextract-1.7/build && cd innoextract-1.7/build \
-       && cmake .. && make && make install && cd ../.. && rm -rf innoextract-1.7 innoextract-1.7.tar.gz \
- && install2.r automagic \
-       && rm -rf /tmp/downloaded_packages
+       && cmake .. && make && make install && cd ../.. && rm -rf innoextract-1.7 innoextract-1.7.tar.gz
 
 WORKDIR /workdir
 
@@ -119,7 +118,13 @@ RUN ./get-r-win.sh && ./get-r-mac.sh
 COPY add-cran-binary-pkgs.R /
 RUN Rscript /add-cran-binary-pkgs.R
 
+COPY requirements.txt ./
+RUN Rscript /add-cran-binary-pkgs.R requirements.txt
+
 COPY --from=rbuild /r-linux/ ./r-linux/
+
+# Remove BH, which is a very large library and seems unnecessary
+RUN rm -rf {r-win,r-mac,r-linux}/library/BH
 
 COPY package.json package-lock.json ./
 
