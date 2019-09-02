@@ -6,11 +6,10 @@ _NOT FOR PRODUCTION_
 
 ## Quickstart
 
-* Clone
-* `npm install`
-* Download mac binaries `./get-r-mac.sh`
-* Download shiny `Rscript add-cran-binary-pkgs.R`
-* `npm start`
+```bash
+docker build . --tag r-shiny-builder
+docker run -it -v $(pwd)/dist:/workdir/dist r-shiny-builder
+```
 
 ## Contribute
 

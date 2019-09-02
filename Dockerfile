@@ -1,4 +1,4 @@
-FROM ubuntu:trusty as rbuild
+FROM ubuntu:trusty-20190122 as rbuild
 
 ENV DEBIAN_FRONTEND=noninteractive DOCKER_BUILD=1
 
@@ -8,10 +8,19 @@ RUN echo 'deb http://cran.rstudio.com/bin/linux/ubuntu trusty-cran35/' >> /etc/a
  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
  && apt-get update \
  && URLS=$(apt-get install -y --no-install-recommends --print-uris \
-       r-base=3.5.1-2trusty \
-       r-recommended=3.5.1-2trusty \
-       r-base-core=3.5.1-2trusty \
+       r-base=3.5.3-1trusty \
+       r-recommended=3.5.3-1trusty \
+       r-base-core=3.5.3-1trusty \
        r-cran-codetools=0.2-15-1.1trusty0 \
+       r-cran-cluster=2.0.7-1-1trusty0 \
+       r-cran-foreign=0.8.59-1 \
+       r-cran-kernsmooth=2.23-10-2 \
+       r-cran-mass=7.3-29-1 \
+       r-cran-mgcv=1.7-28-1 \
+       r-cran-nlme=3.1.113-1 \
+       r-cran-rpart=4.1-5-1 \
+       r-cran-survival=2.37-7-1 \
+       r-cran-matrix=1.1-2-1 \
     | cut -d "'" -f 2 | grep -e "^http") \
  && apt-get install -y --no-install-recommends wget \
  && echo "$URLS" | wget -c -i- \
@@ -48,10 +57,11 @@ RUN echo 'deb http://cran.rstudio.com/bin/linux/ubuntu trusty-cran35/' >> /etc/a
 RUN apt-get install -y --no-install-recommends \
        build-essential \
        libcurl4-openssl-dev \
-       r-base=3.5.1-2trusty \
-       r-recommended=3.5.1-2trusty \
-       r-base-core=3.5.1-2trusty \
-       r-cran-codetools=0.2-15-1.1trusty0
+       r-base=3.5.3-1trusty \
+       r-recommended=3.5.3-1trusty \
+       r-base-core=3.5.3-1trusty \
+       r-cran-codetools=0.2-15-1.1trusty0 \
+       r-cran-cluster=2.0.7-1-1trusty0 r-cran-foreign=0.8.59-1 r-cran-kernsmooth=2.23-10-2 r-cran-mass=7.3-29-1 r-cran-mgcv=1.7-28-1 r-cran-nlme=3.1.113-1 r-cran-rpart=4.1-5-1 r-cran-survival=2.37-7-1 r-cran-matrix=1.1-2-1
 
 WORKDIR /
 
