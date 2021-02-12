@@ -10,6 +10,8 @@ RUN echo 'deb http://cran.rstudio.com/bin/linux/ubuntu trusty-cran35/' >> /etc/a
  && URLS=$(apt-get install -y --no-install-recommends --print-uris \
        r-base=3.5.3-1trusty \
        r-recommended=3.5.3-1trusty \
+       r-cran-boot=1.3-20-1.1trusty0 \
+       r-cran-class=7.3-14-2trusty0 \
        r-cran-nnet=7.3-7-1 \
        r-base-core=3.5.3-1trusty \
        r-cran-codetools=0.2-15-1.1trusty0 \
@@ -63,7 +65,17 @@ RUN apt-get install -y --no-install-recommends \
        r-cran-nnet=7.3-7-1 \
        r-base-core=3.5.3-1trusty \
        r-cran-codetools=0.2-15-1.1trusty0 \
-       r-cran-cluster=2.0.7-1-1trusty0 r-cran-foreign=0.8.59-1 r-cran-kernsmooth=2.23-10-2 r-cran-mass=7.3-29-1 r-cran-mgcv=1.7-28-1 r-cran-nlme=3.1.113-1 r-cran-rpart=4.1-5-1 r-cran-survival=2.37-7-1 r-cran-matrix=1.1-2-1
+       r-cran-boot=1.3-20-1.1trusty0 \
+       r-cran-class=7.3-14-2trusty0 \
+       r-cran-cluster=2.0.7-1-1trusty0 \
+       r-cran-foreign=0.8.59-1 \
+       r-cran-kernsmooth=2.23-10-2 \
+       r-cran-mass=7.3-29-1 \
+       r-cran-mgcv=1.7-28-1 \
+       r-cran-nlme=3.1.113-1 \
+       r-cran-rpart=4.1-5-1 \
+       r-cran-survival=2.37-7-1 \
+       r-cran-matrix=1.1-2-1
 
 WORKDIR /
 
@@ -77,7 +89,7 @@ RUN Rscript /add-cran-binary-pkgs.R requirements.txt
 #####################################################################################################################
 
 
-FROM rocker/shiny:3.5.1
+FROM rocker/shiny:3.5.3
 
 RUN dpkg --add-architecture i386 \
  && apt-get update \
